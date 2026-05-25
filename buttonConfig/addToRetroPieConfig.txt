@@ -1,0 +1,19 @@
+#To use this HAT with retropie, add the following lines to the bottom of config.txt
+
+#controller remap
+dtparam=i2c_arm=off
+force_eeprom_read=0
+dtoverlay=gpio-key,gpio=6,keycode=17,label="RIGHT_SHOULDER",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=5,keycode=16,label="LEFT_SHOULDER",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=22,keycode=45,label="BUTTON_A",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=27,keycode=31,label="BUTTON_X",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=17,keycode=30,label="BUTTON_Y",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=4,keycode=44,label="BUTTON_B",active_low=0,gpio_pull=down
+
+
+dtoverlay=gpio-key,gpio=23,keycode=103,label="DPAD_UP",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=24,keycode=105,label="DPAD_LEFT",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=25,keycode=108,label="DPAD_DOWN",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=1,keycode=106,label="DPAD_RIGHT",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=16,keycode=28,label="START",active_low=0,gpio_pull=down
+dtoverlay=gpio-key,gpio=12,keycode=54,label="SELECT",active_low=0,gpio_pull=down
