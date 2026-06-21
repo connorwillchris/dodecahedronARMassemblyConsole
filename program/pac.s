@@ -15,23 +15,23 @@
 	zeroPage:			.FILL 1024, 1, 0	//256*4
 	LIFE: .fill 1, 4, 0
 	//ZERO PAGE MAP (HEX):
-	//0-13:		SPRITE DATA
-	//14-377:	MAP AND DOT DATA
-	//378-379: 	sprite counter timer, and sprite counter
-	//37A-37F: 	sprite animation order
-	//380-38F:	whoops, I missed this row
-	//390-393: 	random values for ghost movement
-	//394:		ghost speed counter
-	//395:		ghost eating mode (timer, sets to 255, if 0 is false)
-	//396-399:	ghost dead timers
-	//39A-39D:	ghost speeds (actually I don't use this)
-	//39E:		score
+	// 0-13:		SPRITE DATA
+	// 14-377:	MAP AND DOT DATA
+	// 378-379: 	sprite counter timer, and sprite counter
+	// 37A-37F: 	sprite animation order
+	// 380-38F:	whoops, I missed this row
+	// 390-393: 	random values for ghost movement
+	// 394:		ghost speed counter
+	// 395:		ghost eating mode (timer, sets to 255, if 0 is false)
+	// 396-399:	ghost dead timers
+	// 39A-39D:	ghost speeds (actually I don't use this)
+	// 39E:		score
 
 #]
 
 .section .rodata	//READ ONLY DATA
 .ALIGN 4
-	//BUTTONDOWNSPRITE:	.INCBIN "resource/buttonDown.bin"
+	// BUTTONDOWNSPRITE:	.INCBIN "resource/buttonDown.bin"
 	charROM:	.INCBIN "resource/charROM.bin"		//20480B
 	worldROM:	.INCBIN "resource/worldROM.bin"		//224*288=64512B
 	worldMapROM:.INCBIN "resource/worldMapROM.bin"	//[28*31]=868B
@@ -1011,9 +1011,9 @@ PACLOGIC:
 
 testing:
 
-	;PRE-INDEX ADDRESSING
-	LDR R0, [R1, #4]!
-	;R1 += 4 BEFORE MEMEORY ACCESS
+	//;PRE-INDEX ADDRESSING
+	//LDR R0, [R1, #4]!
+	//;R1 += 4 BEFORE MEMEORY ACCESS
 	
-	LDR R0, [R1], #4
-	;R1 += 4 AFTER MEMORY ACCESS
+	//LDR R0, [R1], #4
+	//;R1 += 4 AFTER MEMORY ACCESS

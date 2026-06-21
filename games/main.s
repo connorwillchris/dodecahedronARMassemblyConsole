@@ -1,0 +1,318 @@
+/*
+	MAIN STARTUP AND GAME LOOP
+
+	Taken directly from the source dirctory, from InkBox's
+	project
+*/
+
+.section ".text.boot"
+
+#[ GLOBALS
+.GLOBAL _start
+.GLOBAL _bss_start
+.GLOBAL _bss_size
+
+.EQU GPIO_BASE, 0x3F200000
+.EQU GPFSEL0, 0x00
+.EQU GPFSEL1, 0x04
+.EQU GPFSEL2, 0x08
+
+.EQU GPPUD, 0x94
+.EQU GPPUDCLK0, 0x98
+
+.EQU GPIO_21_OUTPUT, 0x8 // 1 << 3
+
+.EQU GPFSET0, 0x1C
+.EQU GPFCLR0, 0x28
+.EQU GPLEV0, 0x34
+
+.EQU GPIOVAL, 0x200000 // 1 << 21
+#]
+
+_start:
+#[	//STARTUP SECTION - PARK OTHER CORES
+    // CHECK PROCESSOR ID IS ZERO (MAIN CORE), ELSE HANG
+    MRS X1, MPIDR_EL1
+	AND X1, X1, #0xFF
+	CBZ X1, ONMAINCORE
+	//CMP X1, #1
+	//BEQ RUNCORE1
+SECONDARYCORELOOP:  // NOT IN MAIN CORE, LOOP
+    WFE							//LOW POWER WAIT FOR EVENT
+	B SECONDARYCORELOOP
+    MRS X1, MPIDR_EL1			//GET CORE ID
+	AND X1, X1, #0x03
+	MOV X5, #0x8
+    MUL X2, X1, X5				//MULTIPLY ID BY 8 (OFFSET)
+    ADD X2, X2, #0xE0			//CALCULATE MAILBOX ADDRESS (0XE8, 0XF0, 0XF8)
+    LDR X3, [X2]				//READ THE MAILBOX FOR TASK ASSIGNMENT
+	DMB ISH
+    CBZ X3, SECONDARYCORELOOP	//IF STILL 0, GO BACK TO SLEEP
+    MOV X4, XZR
+    STR X4, [X2]				//CLEAR MAILBOX
+    B SECONDARYCORELOOP
+	
+RUNCORE1:
+	//SET CUSTOM STACK
+	MOV X1, #0x78000
+    MOV SP, X1
+/*
+LDR X1, =FB
+AWAITFBREADY:
+	LDR X2, [X1]
+	DMB ISH            // Force synchronization
+	CBZ X2, AWAITFBREADY
+	*/
+	BL DRAWPILOGO
+1:
+	b 1b
+	DRAW1:
+    BL DRAWSCREEN						//BRANCH WITH LINK TO RUN TASK
+	B DRAW1
+    //TASK COMPLETED, RETURN TO BEGINING
+#]
+
+ONMAINCORE:
+// Enable FPU/NEON
+    //mov x1, #0x300000        // Set CPACR_EL1 bits 20 and 21
+    //msr cpacr_el1, x1
+    //isb                      // Instruction Synchronization Barrier
+    // SETUP STACK
+	LDR X1, =_stack_top//_start//_stack_top
+	MOV SP, X1
+	//MOV X1, #0x80000
+	
+	//MOV X1, #0xC00000
+	// BURN:
+		//SUBS X1, X1, #1
+		//BNE BURN
+	
+    // CLEAN BSS SECTION
+	LDR X1, =__bss_start	//START ADDRESS
+	LDR W2, =__bss_size		//SIZE
+CLEARBSSLOOP:
+	CBZ W2, STARTPROGRAM				//QUIT IF ZERO
+	STR XZR, [X1], #8
+	SUB W2, W2, #01
+	CBNZ W2, CLEARBSSLOOP	//LOOP IF NONZERO
+
+STARTPROGRAM:
+	BL INITBUTTONPINS
+	
+	// BASE OF OUR GPIO STRUCTURE
+	LDR W0, =GPIO_BASE
+
+	// SET THE GPIO 21 FUNCTION AS OUTPUT
+	LDR W1, =GPIO_21_OUTPUT
+	STR W1, [X0, #GPFSEL2]
+	DMB SY
+	ISB
+
+	BL FRAMEBUFFERINIT
+	BL DRAWPILOGO
+	BL DRAWPIXEL
+	
+
+	
+	//LDR X2, =0x80000	//THE FUNCTION YOU WANT CORE 1 TO RUN
+	//MOV X1, #0xE8		//RELEASE ADDRESS FOR CORE 1
+	//STR X2, [X1]		//WRITE THE ADDRESS TO THE MAILBOX
+	//DMB ISH
+	//SEV                 //SEND EVENT: WAKES CORES FROM WFE/WFI STATE
+	//.align 3
+	//LDR X2, =DRAWPIXEL2         // The address you want Core 1 to jump to
+//LDR X1, =0x4000009C         // The Hardware Mailbox for Core 1
+//STR W2, [X1]                // Hardware mailboxes are usually 32-bit registers!
+                            // Note: We use W0 (32-bit) because the hardware 
+                            // latch is 32-bits wide in this register bank.
+
+//DSB SY                      // Data Synchronization Barrier (Ensures write hits hardware)
+//SEV                         // Signal Event to wake the core          // Wake Core 1 up
+	
+	/*LDR X1, =LIFE
+	CCC:
+		LDR W2, [X1]
+		CMP W2, #0
+		BEQ CCC
+	*/
+	//GAME SETUP
+	BL initGame
+	BL initZeropage
+
+MAINCORELOOP:
+
+	BL CHECKBUTTONS
+	BL gameLogic
+	BL gameGraphics
+	
+	BL DRAWSCREEN	//drawScreen(offsetX, offsetY, maxScale);
+	
+	
+	B MAINCORELOOP
+	
+		#todo:
+		#	swap colors to be normal
+		#	timing and stuff (have another core do the copy process,
+		#	or do direct copy to FB)
+	
+	
+
+
+DRAWSCREEN:
+#[
+	//COPY 224x288 gameExportScreen TO FB
+	LDR X10, =FB
+	LDR X10, [X10]
+	// SCREEN OFFSET
+	ADD X10, X10, #1152		//X OFFSET
+	ADD X10, X10, #307200	//Y OFFSET
+	LDR X1, =COLORPAL
+	LDR X2, =gameExportScreen
+	
+	
+	MOV W7, #288	//TOTAL LINES
+COPYNEXTLINE:
+	MOV W6, #224
+COPYTOFBLOOP:
+	LDRB W3, [X2], #1	//GET PIXEL COLOR PALETTE INDEX
+	LDR W4, [X1, X3, LSL #2]	//GET COLOR WORD
+	STR W4, [X10], #4
+	//REPEAT TO REDUCE BRANCHING
+	LDRB W3, [X2], #1	//GET PIXEL COLOR PALETTE INDEX
+	LDR W4, [X1, X3, LSL #2]	//GET COLOR WORD
+	STR W4, [X10], #4
+		
+	LDRB W3, [X2], #1	//GET PIXEL COLOR PALETTE INDEX
+	LDR W4, [X1, X3, LSL #2]	//GET COLOR WORD
+	STR W4, [X10], #4
+		
+	LDRB W3, [X2], #1	//GET PIXEL COLOR PALETTE INDEX
+	LDR W4, [X1, X3, LSL #2]	//GET COLOR WORD
+	STR W4, [X10], #4
+AFTEREXPORTPIXEL:
+	SUBS W6, W6, #4
+	BNE COPYTOFBLOOP
+	//ADD OFFSET TO X10
+	ADD X10, X10, #2304
+	SUBS W7, W7, #1
+	BNE COPYNEXTLINE
+		
+	RET
+	
+#]
+
+INITBUTTONPINS:
+	#[
+		//1, 4, 5, 6			GPFSEL0
+		//12, 16, 17			GPFSEL1
+		//22, 23, 24, 25, 27	GPFSEL2
+		
+		//SET GPIO 1, 4, 5, 6 FUNCTION AS INPUT (ALL 0)
+	EOR X0, X0, X0
+	LDR W0, =GPIO_BASE
+	STR WZR, [X0, #GPFSEL0]
+	STR WZR, [X0, #GPFSEL1]
+	STR WZR, [X0, #GPFSEL2]
+	DMB SY
+	ISB
+		//GPIO 1-8 DEFAULT TO PULL UP, MAKE PULL DOWN
+	MOV W1, #0x1	//PULL DOWN
+	STR W1, [X0, #GPPUD]	//SET PULL UP/DOWN CONTROL REGISTER
+	//BURN 150 CYCLES
+	MOV  X0, #150  
+BURN150L0:
+	SUBS X0, X0, #1
+	BNE  BURN150L0
+	MOV W2, #0x72	//1, 4, 5, 6
+	STR W2, [X0, #GPPUDCLK0]	//SET PIN VALUES
+	//BURN 150 CYCLES
+	MOV  X0, #150  
+BURN150L1:
+	SUBS X0, X0, #1
+	BNE  BURN150L1
+	STR WZR, [X0, #GPPUD]
+	STR WZR, [X0, #GPPUDCLK0]
+		
+	RET
+	#]
+	
+READALLBUTTONS:
+	#[	//READ ALL 12 BUTTON STATUS
+	LDR W2, [X0, #GPLEV0]	//READ ALL 32 GPIO STATUS
+		//GET ADDRESS OF STATUS
+	LDR X3, =BUTTONSTATUS
+		//CHECK BITS 1, 4, 5, 6, 12, 16, 17, 22, 23, 24, 25, 27
+		//BUTTON ORDER: 8, 9, 10, 0, 4, 5
+		//				1, 6, 11, 7, 2, 3
+	UBFX W1, W2, #1, #1
+	STRB W1, [X3, #0]         //1
+	UBFX W1, W2, #4, #1
+	STRB W1, [X3, #1]         //4
+	UBFX W1, W2, #5, #1
+	STRB W1, [X3, #2]         //5
+	UBFX W1, W2, #6, #1
+	STRB W1, [X3, #3]         //6
+	UBFX W1, W2, #12, #1
+	STRB W1, [X3, #4]         //12
+	UBFX W1, W2, #16, #1
+	STRB W1, [X3, #5]         //16
+	UBFX W1, W2, #17, #1
+	STRB W1, [X3, #6]         //17
+	UBFX W1, W2, #22, #1
+	STRB W1, [X3, #7]         //22
+	UBFX W1, W2, #23, #1
+	STRB W1, [X3, #8]         //23
+	UBFX W1, W2, #24, #1
+	STRB W1, [X3, #9]         //24
+	UBFX W1, W2, #25, #1
+	STRB W1, [X3, #10]         //25
+	UBFX W1, W2, #27, #1
+	STRB W1, [X3, #11]         //27
+	
+	RET
+#]
+
+CHECKBUTTONS:
+#[
+	STP X29, X30, [SP, #-16]!	//RETURN ADDRESS
+	BL READALLBUTTONS
+	LDR X3, =BUTTONSTATUS
+	MOV W1, WZR
+	
+CHECKRESET:
+	LDRB W2, [X3, #4]
+	CMP W2, #1
+	BNE CHECKDOWNBUTTON
+	//RESET
+	BL initPACASM
+	BL initZEROPAGE
+	B ENDCHECKBUTTONS
+	
+CHECKDOWNBUTTON:
+	LDRB W2, [X3, #8]
+	CMP W2, #1
+	BNE CHECKUPBUTTON
+	MOV W1, #8
+	B ENDCHECKBUTTONS
+CHECKUPBUTTON:
+	LDRB W2, [X3, #0]
+	CMP W2, #1
+	BNE CHECKLEFTBUTTON
+	MOV W1, #4
+	B ENDCHECKBUTTONS
+CHECKLEFTBUTTON:
+	LDRB W2, [X3, #10]
+	CMP W2, #1
+	BNE CHECKRIGHTBUTTON
+	MOV W1, #2
+	B ENDCHECKBUTTONS
+CHECKRIGHTBUTTON:
+	LDRB W2, [X3, #9]
+	CMP W2, #1
+	BNE ENDCHECKBUTTONS
+	MOV W1, #1
+	
+ENDCHECKBUTTONS:
+	LDP X29, X30, [SP], #16
+	RET
+#]

@@ -2,7 +2,7 @@
 .p2align 12		//align 4096 bytes
 	MBOX:	.FILL 40, 4, 0   //REPEAT N TIMES, SIZE M BYTES, VALUE X
 
-.align 4	
+.align 4
 WIDTH: 	.WORD 0
 .align 4	
 HEIGHT: .WORD 0

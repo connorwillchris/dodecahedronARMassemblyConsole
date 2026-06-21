@@ -1,9 +1,7 @@
 MAKEFLAGS += --silent
 
-#GCCPATH="$HOME/opt/cross/bin" # for example, use opt/cross/bin as the path where `aarch64-non-elf-as` lives
-GCCPATH="" # replace with your aarch64-none-elf-as compiler path!
+GCCPATH=/home/connor/opt/cross/bin
 
-# can change -mcpu=cortex-(WHATEVER)
 default:
 	$(GCCPATH)/aarch64-none-elf-as main.s graphics.s pac.s -o pacman.o -mcpu=cortex-a72
 	$(GCCPATH)/aarch64-none-elf-ld pacman.o -o kernel.elf -T link.ld
@@ -14,4 +12,3 @@ default:
 clean:
 	rm pacman.o
 	rm kernel.elf
-	
