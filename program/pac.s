@@ -86,15 +86,13 @@ MOV W4, #1
 LDR X5, =RANDOMENABLE
 STR W4, [X5]  	//ENABLE RNG	
 	
-	
-	
 	MOV X3, #64512
 	
-	copyLoop:
-		LDRB w2, [X1], #1
-		STRB w2, [X10], #1
-		SUBS x3, x3, #1
-		BNE copyLoop
+copyLoop:
+	LDRB w2, [X1], #1
+	STRB w2, [X10], #1
+	SUBS x3, x3, #1
+	BNE copyLoop
 	
     RET
 #]

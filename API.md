@@ -6,5 +6,5 @@
 
 ## TODO
 
-- Update the above files.
-- Make a cartridge STL file, for printing.
+- [ ] Update the above files.
+- [x] Make a cartridge STL file, for printing.
