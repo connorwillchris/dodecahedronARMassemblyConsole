@@ -4,15 +4,15 @@
 
 .align 4
 WIDTH: 	.WORD 0
-.align 4	
+.align 4
 HEIGHT: .WORD 0
 .align 4	
 PITCH: 	.WORD 0
-.align 4	
+.align 4
 ISRGB: 	.WORD 0
-.align 4	
+.align 4
 FB:		.QUAD 0
-	
+
 .section .rodata	//READ ONLY DATA
 .ALIGN 4
 	PILOGO:	.INCBIN "resource/piLogo.bin"

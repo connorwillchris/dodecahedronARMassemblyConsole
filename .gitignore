@@ -1,1 +1,4 @@
 *.o
+.vscode
+emulator/aarch64/aarch64emu
+emulator/aarch64emu
