@@ -72,7 +72,7 @@ ONMAINCORE:
     //msr cpacr_el1, x1
     //isb                      // Instruction Synchronization Barrier
     // SETUP STACK
-	LDR X1, =_stack_top//_start//_stack_top
+	LDR X1, =_stack_top //_start//_stack_top
 	MOV SP, X1
 	//MOV X1, #0x80000
 	
