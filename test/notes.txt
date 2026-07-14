@@ -1,3 +1,4 @@
 # DISPLAY INFO
 
 
+#-march=armv7ve -mcpu=cortex-a72 -mfpu=neon-fp-armv8

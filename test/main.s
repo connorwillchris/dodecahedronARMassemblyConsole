@@ -1,12 +1,11 @@
 .global _start
 
-.equ GPIO_BASE, 0x3f200000
+.equ GPIO_BASE, 0xfe200000 //0x3f200000
 .equ GPFSEL2, 0x8
 .equ GPIO_21_OUTPUT, 0x8 // 1 << 3
 .equ GPFSET0, 0x1c
 .equ GPFCLR0, 0x28
 .equ GPIOVAL, 0x200000 // 1 << 21
-
 
 //.text
 _start:
@@ -17,8 +16,9 @@ _start:
 	ldr x1, =GPIO_21_OUTPUT
 	str x1, [x0, #GPFSEL2]
 
-//	set counter
-	ldr x2, =0x800000
+
+// 	NOTE: Keep at 64 bit version
+	ldr x2, =0x80000
 
 loop:
 //	turn on the LED

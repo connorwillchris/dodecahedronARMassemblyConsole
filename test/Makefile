@@ -1,11 +1,12 @@
 
-GCCPATH=/home/connor/opt/cross/bin
+#GCCPATH=/home/connor/opt/cross/bin
+GCC_PATH=/bin
 
 default:
-	$(GCCPATH)/aarch64-none-elf-as main.s -o testing.o -mcpu=cortex-a72
-	$(GCCPATH)/aarch64-none-elf-ld testing.o -o kernel.elf
-	$(GCCPATH)/aarch64-none-elf-objcopy kernel.elf -O binary kernel8.img
-	@echo "kernel8.img compiled"
+	arm-none-eabi-as main.s -o testing.o -march=armv7ve -mcpu=cortex-a72 -mfpu=neon-fp-armv8
+	arm-none-eabi-ld testing.o -o kernel.elf
+	arm-none-eabi-objcopy kernel.elf -O binary kernel7.img
+	@echo "kernel7.img compiled"
 
 clean:
 	rm testing.o
