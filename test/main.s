@@ -1,6 +1,6 @@
 .global _start
 
-.equ GPIO_BASE, 0x7e200000
+.equ GPIO_BASE, 0xfe200000 // try 0xfe20 first, then if it doesn't work, try the 0xfe00 address next!
 .equ GPFSEL2, 0x8
 .equ GPIO_21_OUTPUT, 0x8 // 1 << 3
 .equ GPFSET0, 0x1c
@@ -10,34 +10,39 @@
 //.text
 _start:
 //	base of our GPIO structure
-	ldr r0, =GPIO_BASE
+	ldr x0, =GPIO_BASE
 
 //	set the GPIO 21 function as output
-	ldr r1, =GPIO_21_OUTPUT
-	str r1, [r0, #GPFSEL2]
-
+	ldr x1, =GPIO_21_OUTPUT
+	str x1, [x0, #GPFSEL2]
 
 // 	NOTE: Keep at 64 bit version
-	ldr r2, =0x80000
+	ldr x2, =0x80000 // 32: 0x8000 address
 
 loop:
 //	turn on the LED
-	ldr r1, =GPIOVAL
-	str r1, [r0, #GPFSET0]
+	ldr w1, =GPIOVAL
+	str w1, [x0, #GPFSET0]
+
+hang:
+	b hang
 
 //	wait for some time delay
-	eor r10, r10, r10
+	eor x10, x10, x10
 delay1:
-	add r10, r10, #1
-	cmp r10, r2
+	add x10, x10, #1
+	cmp x10, x2
 	bne delay1
 
-	ldr r1, =GPIOVAL
-	str r1, [r0, #GPFCLR0]
-	eor r10, r10, r10
+	ldr w1, =GPIOVAL
+	str w1, [x0, #GPFCLR0]
+	eor x10, x10, x10
 delay2:
-	add r10, r10, #1
-	cmp r10, r2
+	add x10, x10, #1
+	cmp x10, x2
 	bne delay2
 
 	b loop
+
+//hang:
+//	b hang

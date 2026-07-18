@@ -2,3 +2,4 @@
 
 
 #-march=armv7ve -mcpu=cortex-a72 -mfpu=neon-fp-armv8
+# ... -mfpu=neon-fp-armv8 -march=armv7ve 
