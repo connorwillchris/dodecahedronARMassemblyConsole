@@ -21,8 +21,8 @@ _start:
 
 loop:
 //	turn on the LED
-	ldr w1, =GPIOVAL
-	str w1, [x0, #GPFSET0]
+	ldr x1, =GPIOVAL
+	str x1, [x0, #GPFSET0]
 
 hang:
 	b hang
